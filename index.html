@@ -80,7 +80,7 @@ main{overflow-y:auto; min-width:0; display:flex; flex-direction:column}
 .ct{display:inline-block; min-width:18px; height:18px; padding:0 5px; border-radius:9px; font-size:11px; font-weight:600; line-height:18px; text-align:center; color:var(--ink-3); background:var(--hover); font-variant-numeric:tabular-nums}
 .ct.hot{color:var(--red); background:color-mix(in srgb,var(--red) 13%,transparent)}
 
-.view{padding:22px 28px 56px; max-width:1200px; width:100%}
+.view{padding:22px 28px 56px; max-width:1440px; width:100%; margin-inline:auto}
 .vh{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px}
 .vh h1{margin:0; font:600 20px/1.25 var(--display); letter-spacing:-.022em}
 .vh p{margin:3px 0 0; color:var(--ink-3); max-width:72ch}
@@ -313,7 +313,7 @@ tr.click[data-file]:hover td:first-child span:last-child{text-decoration-color:c
 .mnav{display:none}
 .nav-scrim{display:none}
 .demo{padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-@media (min-width:1500px){ .view{max-width:1360px} }
+.bar-top,.tabs,.demo{max-width:1440px; width:100%; margin-inline:auto}
 @media (max-width:760px){
   .app{grid-template-columns:1fr}
   .side{position:fixed; top:0; bottom:0; left:0; width:min(300px,86vw); z-index:8; transform:translateX(-104%); transition:transform .2s ease; box-shadow:8px 0 28px rgba(0,0,0,.16); padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -615,9 +615,9 @@ function vSources(){
   </table></div>
   <div class="tfoot-note"><span>Spend from Meta, TikTok, Google and Impact. YouTube spend is the integration fee.</span><span>Red = over the 25% guardrail</span></div>`;
 }
-function chart(){
-  const cw = ($("#view")?.clientWidth || 720) - 64, narrow = cw < 520;
-  const W=Math.round(Math.max(330, Math.min(680, cw))), H=narrow?230:250, L=36, R=narrow?104:118, T=10, B=30, days=[0,7,14,21,30,45,60], f=[0,.1,.2,.3,.62,.85,1];
+function chart(boxW){
+  const cw = boxW || 680, narrow = cw < 520;
+  const W=Math.round(Math.max(300, cw)), H=narrow?230:(cw>1100?300:260), L=36, R=narrow?104:118, T=10, B=30, days=[0,7,14,21,30,45,60], f=[0,.1,.2,.3,.62,.85,1];
   const x = d => L + d/60*(W-L-R), y = v => T + (100-v)/45*(H-T-B);
   const lines = [["yt","YouTube","var(--l-yt)"],["go","Google","var(--l-go)"],["me","Meta","var(--l-me)"],["tt","TikTok","var(--l-tt)"]].map(([k,l,c]) => ({l,c,c60:SRC.find(s=>s.k===k).c60}));
   lines.push({l:"All sources", c:"var(--ink-3)", c60:25, dash:true});
@@ -639,7 +639,7 @@ function vQuality(){
     ${metric("Cancelled by day 30", "16%", "+3 pts vs July · 2,832 customers", "bad", "Turned off renewal within 30 days of their first order", spark(WK.d30, "var(--red)"))}
     ${metric("Cancelled by day 60", "25%", "+4 pts vs July · 4,427 customers", "bad", "Turned off renewal within 60 days of their first order. Guardrail is 25%", spark(WK.d60, "var(--red)"))}
   </div>
-  <div class="chart-wrap"><div class="chart-cap"><div><h2>Share still subscribed, by days since first order</h2><p class="h2sub">August customers by source. The Marble Launcher defect cost every source about 4 points; the gap between lines is everything else.</p></div></div>${chart()}</div>
+  <div class="chart-wrap"><div class="chart-cap"><div><h2>Share still subscribed, by days since first order</h2><p class="h2sub">August customers by source. The Marble Launcher defect cost every source about 4 points; the gap between lines is everything else.</p></div></div><div id="chart"></div></div>
   <div class="tw"><table><thead><tr>${H("Source","Where the customer's first order came from")}${H("New customers","First subscription orders in August",1)}${H("Built first box","Scanned the in-box QR code or opened the build video within 14 days",1)}${H("Contacted support","Opened a ticket within 30 days of first order",1)}${H("Cancelled by day 30","Turned off renewal within 30 days",1)}${H("Cancelled by day 60","Turned off renewal within 60 days",1)}${H("Lost to defect","Got a box from lot ML-0826-B and cancelled, as a share of the source's customers",1)}${H("Budget call","Scale under 25% by day 60, watch 25 to 30%, hold spend over 30%")}</tr></thead>
   <tbody>${[...SRC].sort((a,b)=>a.c60-b.c60).map(s=>`<tr><td class="nm"><b>${s.name}</b></td><td class="r">${s.cust.toLocaleString()}</td><td class="r">${s.built}%</td><td class="r">${s.sup}%</td><td class="r">${s.c30}%</td><td class="r ${s.c60>25?"bad":""}">${s.c60}%</td><td class="r">${s.defect}%</td><td>${call(s.c60)}</td></tr>`).join("")}</tbody>
   <tfoot><tr><td>All sources</td><td class="r">17,700</td><td class="r">81%</td><td class="r">21%</td><td class="r">16%</td><td class="r">25%</td><td class="r">4.3%</td><td></td></tr></tfoot></table></div>
@@ -803,6 +803,7 @@ function render(){
   renderTabs();
   $("#view").innerHTML = ({sources:vSources, quality:vQuality, customers:vCustomers, team:vTeam, files:vFiles})[tab]();
   if (tab==="files") wireUpload();
+  const cb = $("#chart"); if (cb) cb.innerHTML = chart(cb.clientWidth);
 }
 function closeNav(){ $("#app").classList.remove("nav-open"); $("#mnav")?.setAttribute("aria-expanded","false"); }
 function go(t){ tab=t; closeNav(); render(); $("main").scrollTop = 0; $("#tabs [aria-selected=true]")?.scrollIntoView({block:"nearest", inline:"center"}); }
